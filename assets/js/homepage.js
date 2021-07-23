@@ -25,31 +25,34 @@ var getUserRepos = function(user) {
   // format the github api url
   var apiUrl = "https://api.github.com/users/" + user + "/repos";
 
-  // make a get request to url
-  fetch(apiUrl)
-    .then(function(response) {
-      // request was successful
-      if (response.ok) {
-        console.log(response);
-        response.json().then(function(data) {
-          console.log(data);
-          displayRepos(data, user);
-        });
-      } else {
-        alert("Error: " + response.statusText);
-      }
-    })
-    .catch(function(error) {
-      alert("Unable to connect to GitHub");
-    });
-};
-
+// make a get request to url
+fetch(apiUrl).then(function(response) {
+    // request was successful
+    if (response.ok) {
+      response.json().then(function(data) {
+        displayIssues(data);
+  
+        // check if api has paginated issues
+        if (response.headers.get("Link")) {
+          displayWarning(repo);
+        }
+      });
+    } else {
+      // if not successful, redirect to homepage
+      document.location.replace("./index.html");
+    }
+  });
+}
 var displayRepos = function(repos, searchTerm) {
   // check if api returned any repos
   if (repos.length === 0) {
     repoContainerEl.textContent = "No repositories found.";
     return;
   }
+    // create a link for each repo
+    var repoEl = document.createElement("a");
+    repoEl.classList = "list-item flex-row justify-space-between align-center";
+    repoEl.setAttribute("href", "./single-repo.html?repo=" + repoName);
 
   repoSearchTerm.textContent = searchTerm;
 
@@ -57,11 +60,11 @@ var displayRepos = function(repos, searchTerm) {
   for (var i = 0; i < repos.length; i++) {
     // format repo name
     var repoName = repos[i].owner.login + "/" + repos[i].name;
-
+  
     // create a container for each repo
-    var repoEl = document.createElement("div");
+    var repoEl = document.createElement("a");
     repoEl.classList = "list-item flex-row justify-space-between align-center";
-
+    repoEl.setAttribute("href", "./single-repo.html");
     // create a span element to hold repository name
     var titleEl = document.createElement("span");
     titleEl.textContent = repoName;
@@ -91,3 +94,19 @@ var displayRepos = function(repos, searchTerm) {
 
 // add event listeners to forms
 userFormEl.addEventListener("submit", formSubmitHandler);
+
+var getRepoName = function() {
+    // grab repo name from url query string
+    var queryString = document.location.search;
+    var repoName = queryString.split("=")[1];
+  
+    if (repoName) {
+      // display repo name on the page
+      repoNameEl.textContent = repoName;
+  
+      getRepoIssues(repoName);
+    } else {
+      // if no repo was given, redirect to the homepage
+      document.location.replace("./index.html");
+    }
+  };
